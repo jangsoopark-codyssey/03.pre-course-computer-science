@@ -121,6 +121,7 @@ class Application(object):
 
             results.append(result)
 
+        self._performance_analysis(filters)
         self._print_summary(results)
 
     def run(self):
@@ -224,6 +225,43 @@ class Application(object):
 
             return key, False, str(e)
 
+    def _performance_analysis(self, filters):
+        print(
+            '\n'
+            "#----------------------------------------\n"
+            f"# [3] 성능 분석 (평균/{self._num_iterations}회)\n"
+            "#----------------------------------------"
+        )
+
+        matrix_3 = matrix.Matrix([
+            [0.0, 1.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [0.0, 1.0, 0.0],
+        ])
+
+        cases = {
+            3: matrix_3,
+            5: filters['size_5']['Cross'],
+            13: filters['size_13']['Cross'],
+            25: filters['size_25']['Cross'],
+        }
+
+        print(f'{"크기":<10} {"평균 시간(ms)":<18} {"연산 횟수":<10}')
+        print('-' * 42)
+
+        for size, data in cases.items():
+            average_time = self._benchmark.measure(
+                simulator=self._npu,
+                pattern=data,
+                filter_=data
+            )
+
+            print(
+                f'{size}x{size:<6} '
+                f'{average_time:<18.6f} '
+                f'{size * size}'
+            )
+            
     def _print_summary(self, results):
         total = len(results)
         passed = sum(result[1] for result in results)
