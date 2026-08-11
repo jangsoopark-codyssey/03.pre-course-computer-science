@@ -1,14 +1,21 @@
-# application.py
+
+from npu import simulator
+from npu import matrix
 
 from common import utils
-from npu import matrix
 
 
 class Application(object):
 
     def __init__(self, name, **params):
         self._name = name
+
         self._data_path = params.get('data_path')
+        self._num_iterations = params.get('num_iterations', 10)
+
+        self._npu = simulator.Simulator(
+            epsilon=1e-9
+        )
 
         self._func = {
             '1': self.user_input_mode,
@@ -33,6 +40,7 @@ class Application(object):
             "# [1] 필터 입력\n"
             "#---------------------------------------\n"
         )
+
         filter_a = matrix.Matrix(
             data=utils.input_matrix(name='필터 A', rows=3, cols=3)
         )
@@ -42,6 +50,7 @@ class Application(object):
         filter_b = matrix.Matrix(
             data=utils.input_matrix(name='필터 B', rows=3, cols=3)
         )
+        
         print(
             '\n'
             "#----------------------------------------\n"
@@ -52,9 +61,31 @@ class Application(object):
             utils.input_matrix(name='패턴', rows=3, cols=3)
         )
 
-        print(filter_a)
-        print(filter_b)
-        print(pattern)
+        score_a = self._npu.multiplication_accumulation(
+            pattern=pattern,
+            filter_=filter_a
+        )
+
+        score_b = self._npu.multiplication_accumulation(
+            pattern=pattern,
+            filter_=filter_b
+        )
+
+        result = self._npu.compare(
+            score_a=score_a,
+            score_b=score_b
+        )
+
+        print(
+            '\n'
+            "#----------------------------------------\n"
+            "# [3] MAC 결과\n"
+            "#----------------------------------------"
+        )
+
+        print(f'A 점수: {score_a}')
+        print(f'B 점수: {score_b}')
+        print(f'판정: {result}')
 
 
     def json_input_mode(self):
