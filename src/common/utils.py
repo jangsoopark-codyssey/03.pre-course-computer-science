@@ -39,3 +39,13 @@ def input_matrix(name: str, rows: int, cols: int) -> List[List[float]]:
 def load_json(path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as file:
         return json.load(file)
+
+
+def normalize_label(label: str):
+    labels = {
+        '+': 'Cross',
+        'cross': 'Cross',
+        'x': 'X',
+    }
+
+    return labels.get(str(label).strip().lower())

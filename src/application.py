@@ -103,32 +103,25 @@ class Application(object):
         )
         print(f'판정: {result}')
 
-
     def json_input_mode(self):
         data = utils.load_json(self._data_path)
 
-        filters = data.get('filters', {})
-        patterns = data.get('patterns', {})
-
-        print(
-            "#----------------------------------------\n"
-            "# [1] 필터 로드\n"
-            "#----------------------------------------"
+        filters = self._load_filters(
+            data.get('filters', {})
         )
 
-        for key in ('size_5', 'size_13', 'size_25'):
-            filter_data = filters.get(key)
+        results = []
 
-            if filter_data is None:
-                print(f'✗ {key} 필터 로드 실패')
-                continue
+        for key, item in data.get('patterns', {}).items():
+            result = self._analyze_pattern(
+                key=key,
+                item=item,
+                filters=filters
+            )
 
-            if 'cross' not in filter_data or 'x' not in filter_data:
-                print(f'✗ {key} 필터 스키마 오류')
-                continue
+            results.append(result)
 
-            print(f'✓ {key} 필터 로드 완료 (Cross, X)')
-
+        self._print_summary(results)
 
     def run(self):
         
@@ -139,3 +132,122 @@ class Application(object):
             return
 
         mode()
+
+
+    def _load_filters(self, filters):
+        loaded = {}
+
+        print(
+            "#----------------------------------------\n"
+            "# [1] 필터 로드\n"
+            "#----------------------------------------"
+        )
+
+        for key, item in filters.items():
+            if 'cross' not in item or 'x' not in item:
+                print(f'✗ {key} 필터 스키마 오류')
+                continue
+
+            loaded[key] = {
+                'Cross': matrix.Matrix(item['cross']),
+                'X': matrix.Matrix(item['x']),
+            }
+
+            print(f'✓ {key} 필터 로드 완료 (Cross, X)')
+
+        return loaded
+
+    def _analyze_pattern(self, key, item, filters):
+        try:
+            _, size, _ = key.split('_')
+            size = int(size)
+
+            filter_ = filters[f'size_{size}']
+            pattern = matrix.Matrix(item['input'])
+
+            if pattern.shape != (size, size):
+                raise ValueError('패턴 크기 불일치')
+
+            if pattern.shape != filter_['Cross'].shape:
+                raise ValueError('Cross 필터 크기 불일치')
+
+            if pattern.shape != filter_['X'].shape:
+                raise ValueError('X 필터 크기 불일치')
+
+            expected = utils.normalize_label(item['expected'])
+
+            score_cross = self._npu.multiplication_accumulation(
+                pattern=pattern,
+                filter_=filter_['Cross']
+            )
+
+            score_x = self._npu.multiplication_accumulation(
+                pattern=pattern,
+                filter_=filter_['X']
+            )
+
+            result = self._npu.compare(
+                score_a=score_cross,
+                score_b=score_x
+            )
+
+            result = {
+                'A': 'Cross',
+                'B': 'X',
+                'UNDECIDED': 'UNDECIDED',
+            }[result]
+
+            passed = result == expected
+
+            reason = None
+
+            if not passed:
+                if result == 'UNDECIDED':
+                    reason = '동점(UNDECIDED) 처리 규칙에 따라 FAIL'
+                else:
+                    reason = f'판정 불일치 (result={result}, expected={expected})'
+
+            print(f'\n--- {key} ---')
+            print(f'Cross 점수: {score_cross}')
+            print(f'X 점수: {score_x}')
+            print(
+                f'판정: {result} | '
+                f'expected: {expected} | '
+                f'{"PASS" if passed else "FAIL"}'
+            )
+
+            return key, passed, reason
+
+        except (KeyError, ValueError, AssertionError) as e:
+            print(f'\n--- {key} ---')
+            print(f'FAIL ({e})')
+
+            return key, False, str(e)
+
+    def _print_summary(self, results):
+        total = len(results)
+        passed = sum(result[1] for result in results)
+        failed = total - passed
+
+        print(
+            '\n'
+            "#----------------------------------------\n"
+            "# [4] 결과 요약\n"
+            "#----------------------------------------"
+        )
+
+        print(f'총 테스트: {total}개')
+        print(f'통과: {passed}개')
+        print(f'실패: {failed}개')
+
+        failures = [
+            result
+            for result in results
+            if not result[1]
+        ]
+
+        if failures:
+            print('\n실패 케이스:')
+
+            for key, _, reason in failures:
+                print(f'- {key}: {reason}')
