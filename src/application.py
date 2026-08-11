@@ -1,5 +1,6 @@
 
 from npu import simulator
+from npu import benchmark
 from npu import matrix
 
 from common import utils
@@ -15,6 +16,9 @@ class Application(object):
 
         self._npu = simulator.Simulator(
             epsilon=1e-9
+        )
+        self._benchmark = benchmark.Benchmark(
+            iterations=self._num_iterations
         )
 
         self._func = {
@@ -61,6 +65,7 @@ class Application(object):
             utils.input_matrix(name='패턴', rows=3, cols=3)
         )
 
+        # Simulation
         score_a = self._npu.multiplication_accumulation(
             pattern=pattern,
             filter_=filter_a
@@ -75,6 +80,13 @@ class Application(object):
             score_a=score_a,
             score_b=score_b
         )
+ 
+        # Benchmark
+        average_time = self._benchmark.measure(
+            simulator=self._npu,
+            pattern=pattern,
+            filter_=filter_a
+        )
 
         print(
             '\n'
@@ -85,6 +97,10 @@ class Application(object):
 
         print(f'A 점수: {score_a}')
         print(f'B 점수: {score_b}')
+        print(
+            f'연산 시간(평균/{self._num_iterations}회): '
+            f'{average_time:.6f} ms'
+        )
         print(f'판정: {result}')
 
 
