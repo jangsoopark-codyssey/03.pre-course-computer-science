@@ -1,4 +1,3 @@
-
 from npu import simulator
 from npu import benchmark
 from npu import matrix
@@ -17,6 +16,7 @@ class Application(object):
         self._npu = simulator.Simulator(
             epsilon=1e-9
         )
+
         self._benchmark = benchmark.Benchmark(
             iterations=self._num_iterations
         )
@@ -25,7 +25,6 @@ class Application(object):
             '1': self.user_input_mode,
             '2': self.json_input_mode,
         }
-        
 
     def menu(self):
         print(
@@ -38,7 +37,6 @@ class Application(object):
         return input('선택: ').strip()
 
     def user_input_mode(self):
-        
         print(
             "#----------------------------------------\n"
             "# [1] 필터 입력\n"
@@ -46,23 +44,36 @@ class Application(object):
         )
 
         filter_a = matrix.Matrix(
-            data=utils.input_matrix(name='필터 A', rows=3, cols=3)
+            data=utils.input_matrix(
+                name='필터 A',
+                rows=3,
+                cols=3
+            )
         )
 
         print()
 
         filter_b = matrix.Matrix(
-            data=utils.input_matrix(name='필터 B', rows=3, cols=3)
+            data=utils.input_matrix(
+                name='필터 B',
+                rows=3,
+                cols=3
+            )
         )
-        
+
         print(
             '\n'
             "#----------------------------------------\n"
             "# [2] 패턴 입력\n"
             "#---------------------------------------\n"
         )
+
         pattern = matrix.Matrix(
-            utils.input_matrix(name='패턴', rows=3, cols=3)
+            data=utils.input_matrix(
+                name='패턴',
+                rows=3,
+                cols=3
+            )
         )
 
         # Simulation
@@ -80,7 +91,7 @@ class Application(object):
             score_a=score_a,
             score_b=score_b
         )
- 
+
         # Benchmark
         average_time = self._benchmark.measure(
             simulator=self._npu,
@@ -125,15 +136,14 @@ class Application(object):
         self._print_summary(results)
 
     def run(self):
-        
         choice = self.menu()
 
         mode = self._func.get(choice, None)
+
         if mode is None:
             return
 
         mode()
-
 
     def _load_filters(self, filters):
         loaded = {}
@@ -150,11 +160,18 @@ class Application(object):
                 continue
 
             loaded[key] = {
-                'Cross': matrix.Matrix(item['cross']),
-                'X': matrix.Matrix(item['x']),
+                'Cross': matrix.Matrix(
+                    data=item['cross']
+                ),
+                'X': matrix.Matrix(
+                    data=item['x']
+                ),
             }
 
-            print(f'✓ {key} 필터 로드 완료 (Cross, X)')
+            print(
+                f'✓ {key} 필터 로드 완료 '
+                f'(Cross, X)'
+            )
 
         return loaded
 
@@ -164,27 +181,48 @@ class Application(object):
             size = int(size)
 
             filter_ = filters[f'size_{size}']
-            pattern = matrix.Matrix(item['input'])
 
-            if pattern.shape != (size, size):
-                raise ValueError('패턴 크기 불일치')
-
-            if pattern.shape != filter_['Cross'].shape:
-                raise ValueError('Cross 필터 크기 불일치')
-
-            if pattern.shape != filter_['X'].shape:
-                raise ValueError('X 필터 크기 불일치')
-
-            expected = utils.normalize_label(item['expected'])
-
-            score_cross = self._npu.multiplication_accumulation(
-                pattern=pattern,
-                filter_=filter_['Cross']
+            pattern = matrix.Matrix(
+                data=item['input']
             )
 
-            score_x = self._npu.multiplication_accumulation(
-                pattern=pattern,
-                filter_=filter_['X']
+            if pattern.shape != (size, size):
+                raise ValueError(
+                    '패턴 크기 불일치'
+                )
+
+            if pattern.shape != filter_['Cross'].shape:
+                raise ValueError(
+                    'Cross 필터 크기 불일치'
+                )
+
+            if pattern.shape != filter_['X'].shape:
+                raise ValueError(
+                    'X 필터 크기 불일치'
+                )
+
+            expected = utils.normalize_label(
+                item['expected']
+            )
+
+            if expected is None:
+                raise ValueError(
+                    f'알 수 없는 expected 라벨: '
+                    f'{item["expected"]}'
+                )
+
+            score_cross = (
+                self._npu.multiplication_accumulation(
+                    pattern=pattern,
+                    filter_=filter_['Cross']
+                )
+            )
+
+            score_x = (
+                self._npu.multiplication_accumulation(
+                    pattern=pattern,
+                    filter_=filter_['X']
+                )
             )
 
             result = self._npu.compare(
@@ -204,9 +242,16 @@ class Application(object):
 
             if not passed:
                 if result == 'UNDECIDED':
-                    reason = '동점(UNDECIDED) 처리 규칙에 따라 FAIL'
+                    reason = (
+                        '동점(UNDECIDED) 처리 규칙에 '
+                        '따라 FAIL'
+                    )
                 else:
-                    reason = f'판정 불일치 (result={result}, expected={expected})'
+                    reason = (
+                        f'판정 불일치 '
+                        f'(result={result}, '
+                        f'expected={expected})'
+                    )
 
             print(f'\n--- {key} ---')
             print(f'Cross 점수: {score_cross}')
@@ -219,7 +264,11 @@ class Application(object):
 
             return key, passed, reason
 
-        except (KeyError, ValueError, AssertionError) as e:
+        except (
+            KeyError,
+            ValueError,
+            AssertionError
+        ) as e:
             print(f'\n--- {key} ---')
             print(f'FAIL ({e})')
 
@@ -229,27 +278,33 @@ class Application(object):
         print(
             '\n'
             "#----------------------------------------\n"
-            f"# [3] 성능 분석 (평균/{self._num_iterations}회)\n"
+            f"# [3] 성능 분석 "
+            f"(평균/{self._num_iterations}회)\n"
             "#----------------------------------------"
         )
 
-        matrix_3 = matrix.Matrix([
-            [0.0, 1.0, 0.0],
-            [1.0, 1.0, 1.0],
-            [0.0, 1.0, 0.0],
-        ])
+        print(
+            f'{"크기":<10} '
+            f'{"평균 시간(ms)":<18} '
+            f'{"연산 횟수":<10}'
+        )
 
-        cases = {
-            3: matrix_3,
-            5: filters['size_5']['Cross'],
-            13: filters['size_13']['Cross'],
-            25: filters['size_25']['Cross'],
-        }
-
-        print(f'{"크기":<10} {"평균 시간(ms)":<18} {"연산 횟수":<10}')
         print('-' * 42)
 
-        for size, data in cases.items():
+        for size in (3, 5, 13, 25):
+            key = f'size_{size}'
+
+            filter_ = filters.get(key)
+
+            if filter_ is None:
+                print(
+                    f'{size}x{size:<6} '
+                    f'필터 없음'
+                )
+                continue
+
+            data = filter_['Cross']
+
             average_time = self._benchmark.measure(
                 simulator=self._npu,
                 pattern=data,
@@ -261,10 +316,15 @@ class Application(object):
                 f'{average_time:<18.6f} '
                 f'{size * size}'
             )
-            
+
     def _print_summary(self, results):
         total = len(results)
-        passed = sum(result[1] for result in results)
+
+        passed = sum(
+            result[1]
+            for result in results
+        )
+
         failed = total - passed
 
         print(
@@ -288,4 +348,7 @@ class Application(object):
             print('\n실패 케이스:')
 
             for key, _, reason in failures:
-                print(f'- {key}: {reason}')
+                print(
+                    f'- {key}: {reason}'
+                )
+                

@@ -1,16 +1,34 @@
 from common import definitions
+
 import application
 
-import sys
+import argparse
 import os
+import sys
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Mini NPU Simulator'
+    )
+
+    parser.add_argument(
+        '--data',
+        type=str,
+        default='data.json',
+        help='JSON data file name (default: data.json)'
+    )
+
+    return parser.parse_args()
 
 
 def main():
+    args = parse_args()
 
     data_path = os.path.join(
         definitions.project_root,
         'data',
-        'data.json'
+        args.data
     )
 
     app = application.Application(
