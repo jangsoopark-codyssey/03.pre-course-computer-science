@@ -155,23 +155,33 @@ class Application(object):
         )
 
         for key, item in filters.items():
-            if 'cross' not in item or 'x' not in item:
-                print(f'✗ {key} 필터 스키마 오류')
-                continue
+            try:
+                if 'cross' not in item or 'x' not in item:
+                    raise ValueError('필터 스키마 오류')
 
-            loaded[key] = {
-                'Cross': matrix.Matrix(
-                    data=item['cross']
-                ),
-                'X': matrix.Matrix(
-                    data=item['x']
-                ),
-            }
+                loaded[key] = {
+                    'Cross': matrix.Matrix(
+                        data=item['cross']
+                    ),
+                    'X': matrix.Matrix(
+                        data=item['x']
+                    ),
+                }
 
-            print(
-                f'✓ {key} 필터 로드 완료 '
-                f'(Cross, X)'
-            )
+                print(
+                    f'✓ {key} 필터 로드 완료 '
+                    f'(Cross, X)'
+                )
+
+            except (
+                KeyError,
+                TypeError,
+                ValueError,
+                AssertionError
+            ) as e:
+                print(
+                    f'✗ {key} 필터 로드 실패 ({e})'
+                )
 
         return loaded
 
