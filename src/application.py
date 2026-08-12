@@ -94,7 +94,7 @@ class Application(object):
 
         # Benchmark
         average_time = self._benchmark.measure(
-            simulator=self._npu,
+            func=self._npu.multiplication_accumulation,
             pattern=pattern,
             filter_=filter_a
         )
@@ -132,8 +132,11 @@ class Application(object):
 
             results.append(result)
 
-        self._performance_analysis(filters)
-        self._print_summary(results)
+        performances = self._performance_analysis(filters)
+        self._print_summary(
+            results=results,
+            performances=performances,
+        )
 
     def run(self):
         choice = self.menu()
@@ -155,23 +158,33 @@ class Application(object):
         )
 
         for key, item in filters.items():
-            if 'cross' not in item or 'x' not in item:
-                print(f'✗ {key} 필터 스키마 오류')
-                continue
+            try:
+                if 'cross' not in item or 'x' not in item:
+                    raise ValueError('필터 스키마 오류')
 
-            loaded[key] = {
-                'Cross': matrix.Matrix(
-                    data=item['cross']
-                ),
-                'X': matrix.Matrix(
-                    data=item['x']
-                ),
-            }
+                loaded[key] = {
+                    'Cross': matrix.Matrix(
+                        data=item['cross']
+                    ),
+                    'X': matrix.Matrix(
+                        data=item['x']
+                    ),
+                }
 
-            print(
-                f'✓ {key} 필터 로드 완료 '
-                f'(Cross, X)'
-            )
+                print(
+                    f'✓ {key} 필터 로드 완료 '
+                    f'(Cross, X)'
+                )
+
+            except (
+                KeyError,
+                TypeError,
+                ValueError,
+                AssertionError
+            ) as e:
+                print(
+                    f'✗ {key} 필터 로드 실패 ({e})'
+                )
 
         return loaded
 
@@ -266,6 +279,7 @@ class Application(object):
 
         except (
             KeyError,
+            TypeError,
             ValueError,
             AssertionError
         ) as e:
@@ -284,40 +298,54 @@ class Application(object):
         )
 
         print(
-            f'{"크기":<10} '
-            f'{"평균 시간(ms)":<18} '
-            f'{"연산 횟수":<10}'
+            f'{"크기":<10}'
+            f'{"2D 시간(ms)":>12}'
+            f'{"1D 시간(ms)":>15}'
+            f'{"연산 횟수":>12}'
         )
 
-        print('-' * 42)
+        print('-' * 70)
+
+        performances = []
 
         for size in (3, 5, 13, 25):
             key = f'size_{size}'
-
             filter_ = filters.get(key)
 
             if filter_ is None:
-                print(
-                    f'{size}x{size:<6} '
-                    f'필터 없음'
-                )
                 continue
 
             data = filter_['Cross']
+            flat_data = data.flatten()
 
-            average_time = self._benchmark.measure(
-                simulator=self._npu,
+            time_2d = self._benchmark.measure(
+                func=self._npu.multiplication_accumulation,
                 pattern=data,
                 filter_=data
             )
 
-            print(
-                f'{size}x{size:<6} '
-                f'{average_time:<18.6f} '
-                f'{size * size}'
+            time_1d = self._benchmark.measure(
+                func=self._npu.multiplication_accumulation_flat,
+                pattern=flat_data,
+                filter_=flat_data
             )
 
-    def _print_summary(self, results):
+            operations = size * size
+
+            performances.append(
+                (size, time_2d, time_1d)
+            )
+
+            print(
+                f'{f"{size}x{size}":<10}'
+                f'{time_2d:>15.6f}'
+                f'{time_1d:>15.6f}'
+                f'{operations:>15}'
+            )
+
+        return performances
+
+    def _print_summary(self, results, performances):
         total = len(results)
 
         passed = sum(
@@ -348,7 +376,39 @@ class Application(object):
             print('\n실패 케이스:')
 
             for key, _, reason in failures:
-                print(
-                    f'- {key}: {reason}'
+                print(f'- {key}: {reason}')
+
+        print('\n성능 비교:')
+
+        for size, time_2d, time_1d in performances:
+            if time_1d < time_2d:
+                improvement = (
+                    (time_2d - time_1d)
+                    / time_2d
+                    * 100.0
                 )
-                
+
+                print(
+                    f'- {size}x{size}: '
+                    f'1D가 2D보다 '
+                    f'{improvement:.2f}% 빠름'
+                )
+
+            elif time_2d < time_1d:
+                difference = (
+                    (time_1d - time_2d)
+                    / time_2d
+                    * 100.0
+                )
+
+                print(
+                    f'- {size}x{size}: '
+                    f'1D가 2D보다 '
+                    f'{difference:.2f}% 느림'
+                )
+
+            else:
+                print(
+                    f'- {size}x{size}: '
+                    f'2D와 1D 성능 동일'
+                )
