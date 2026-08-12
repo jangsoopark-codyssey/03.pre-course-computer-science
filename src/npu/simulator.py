@@ -23,6 +23,18 @@ class Simulator(object):
 
         return score
 
+    def multiplication_accumulation_flat(self, pattern: matrix.Matrix, filter_: matrix.Matrix) -> float:
+
+        if len(pattern) != len(filter_):
+            raise ValueError('Vector size mismatch')
+
+        score = 0.0
+
+        for i in range(len(pattern)):
+            score += pattern [i] * filter_[i]
+
+        return score
+
     def compare(self, score_a: float, score_b: float) -> str:
         if abs(score_a - score_b) < self._epsilon:
             return 'UNDECIDED'

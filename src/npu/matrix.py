@@ -24,6 +24,9 @@ class Matrix(object):
     def cols(self) -> int:
         return self.shape[1]
 
+    def flatten(self):
+        return [value for row in self._data for value in row]
+
     def __getitem__(self, index):
         return self._data[index]
 

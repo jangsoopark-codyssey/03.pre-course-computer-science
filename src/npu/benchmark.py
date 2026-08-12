@@ -1,5 +1,3 @@
-# npu/benchmark.py
-
 import time
 
 
@@ -10,18 +8,16 @@ class Benchmark(object):
 
         self._iterations = iterations
 
-    def measure(self, simulator, pattern, filter_) -> float:
+    def measure(self, func, **kwargs):
         start = time.perf_counter()
 
         for _ in range(self._iterations):
-            simulator.multiplication_accumulation(
-                pattern=pattern,
-                filter_=filter_
-            )
+            func(**kwargs)
 
         end = time.perf_counter()
 
-        elapsed = end - start
-        average = elapsed / self._iterations
-
-        return average * 1000.0
+        return (
+            (end - start)
+            / self._iterations
+            * 1000.0
+        )
