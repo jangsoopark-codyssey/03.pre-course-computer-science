@@ -19,6 +19,13 @@ def parse_args():
         help='JSON data file name (default: data.json)'
     )
 
+    parser.add_argument(
+        '--num-iterations',
+        type=int,
+        default=10,
+        help='max num iterations for performance analysis'
+    )
+
     return parser.parse_args()
 
 
@@ -34,6 +41,7 @@ def main():
     app = application.Application(
         name='Mini NPU Simulator',
         data_path=data_path,
+        num_iterations=args.num_iterations,
     )
 
     app.run()

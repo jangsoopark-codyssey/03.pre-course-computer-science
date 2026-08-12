@@ -4,9 +4,10 @@ project_root="$(dirname ${PWD})"
 
 python=python3 #"${project_root}/venv/bin/python"
 
-data=data_schema_error.json
+data=data.json
+num_iterations=10000
+
 run=${project_root}/src/main.py
 
-
-$python $run --data=$data
+$python $run --data=$data --num-iterations=$num_iterations
 

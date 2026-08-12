@@ -381,19 +381,17 @@ X 패턴은 주대각선과 반대 대각선을 활성화하여 생성한다.
 
 ## 10. 결과 리포트
 
-### 10.1 테스트 결과
-
-#### 사용자 입력 모드
-
-```text
-[사용자 입력 패턴 / Generated Cross / Generated X 실제 결과 삽입]
-```
 <details>
 <summary> 실행 초기 화면 </summary>
 
 ![실행 초기 화면](assets/figure/01.main.png)
 
 </details>
+
+### 10.1 테스트 결과
+
+#### 사용자 입력 모드
+
 
 <details>
 <summary> 사용자 입력 모드 - 정상 </summary>
@@ -403,25 +401,12 @@ X 패턴은 주대각선과 반대 대각선을 활성화하여 생성한다.
 </details>
 
 <details>
-<summary> 사용자 입력 모드 - 열 개수 오류 </summary>
-
-![사용자 입력 모드 - 열 개수 오류](assets/figure/03.user-input-mode-error1.png)
-
-</details>
-
-<details>
-<summary> 사용자 입력 모드 - 숫자 변환 오류 </summary>
-
-![사용자 입력 모드 - 숫자 변환 오류](assets/figure/04.user-input-mode-error2.png)
-
-</details>
-
-<details>
 <summary> 허용 오차(Tolerance)를 이용한 판정 </summary>
 
 ![판정](assets/figure/05.epsilon.png)
 
 </details>
+
 
 #### JSON 데이터 분석 모드
 
@@ -452,12 +437,44 @@ X 패턴은 주대각선과 반대 대각선을 활성화하여 생성한다.
 
 </details>
 
+
+
+### 10.2 실패 케이스 분석
+
+실패 케이스는 원인에 따라 데이터 및 스키마 문제, 판정 로직 문제, 부동소수점 비교 문제로 구분하여 분석한다.  
+특히 Cross와 X의 MAC 점수 차이가 epsilon보다 작은 경우 실제 부동소수점 표현에는 미세한 차이가 존재하더라도 `UNDECIDED`로 처리한다. 따라서 `expected`가 `Cross` 또는 `X`인 테스트 데이터가 epsilon 범위에서 동점으로 판정되면 해당 케이스는 FAIL이 된다.  
+이는 단순히 두 부동소수점 값의 대소 관계만을 이용하지 않고 수치 오차를 고려한 비교 정책을 적용한 결과이다.
+
+
+#### 사용자 입력 모드 - 열 개수 불일치
+
+<details>
+<summary> 사용자 입력 모드 - 열 개수 오류 </summary>
+
+![사용자 입력 모드 - 열 개수 오류](assets/figure/03.user-input-mode-error1.png)
+
+</details>
+
+#### 사용자 입력 모드 - 숫자 변환 실패
+
+<details>
+<summary> 사용자 입력 모드 - 숫자 변환 오류 </summary>
+
+![사용자 입력 모드 - 숫자 변환 오류](assets/figure/04.user-input-mode-error2.png)
+
+</details>
+
+
+#### json 입력 모드  - 패턴 크기 오류
+
 <details>
 <summary> json 입력 모드 - 패턴 크기 오류 </summary>
 
 ![json 입력 모드 - 패턴 크기 오류](assets/figure/07.json-input-mode-patter-size-mismatch.png)
 
 </details>
+
+#### json 입력 모드  - 필터 크기 오류
 
 <details>
 <summary> json 입력 모드 - 필터 크기 오류 </summary>
@@ -466,6 +483,7 @@ X 패턴은 주대각선과 반대 대각선을 활성화하여 생성한다.
 
 </details>
 
+#### json 입력 모드  - 스키마 오류
 
 <details>
 <summary> json 입력 모드 - 스키마 오류 </summary>
@@ -475,32 +493,27 @@ X 패턴은 주대각선과 반대 대각선을 활성화하여 생성한다.
 </details>
 
 
-### 10.2 실패 케이스 분석
-
-```text
-[실제 FAIL 케이스 목록 삽입]
-```
-
-실패 케이스는 원인에 따라 데이터 및 스키마 문제, 판정 로직 문제, 부동소수점 비교 문제로 구분하여 분석한다.  
-특히 Cross와 X의 MAC 점수 차이가 epsilon보다 작은 경우 실제 부동소수점 표현에는 미세한 차이가 존재하더라도 `UNDECIDED`로 처리한다. 따라서 `expected`가 `Cross` 또는 `X`인 테스트 데이터가 epsilon 범위에서 동점으로 판정되면 해당 케이스는 FAIL이 된다.  
-이는 단순히 두 부동소수점 값의 대소 관계만을 이용하지 않고 수치 오차를 고려한 비교 정책을 적용한 결과이다.
-
 ### 10.3 성능 측정 결과
 
 실제 실행 환경에서 측정한 결과를 다음 표에 정리한다.
 
 | 크기 | 2D 평균 시간(ms) | 1D 평균 시간(ms) | 연산 횟수 |
-| ---: | ---: | ---: | ---: |
-| 3×3 |  |  | 9 |
-| 5×5 |  |  | 25 |
-| 13×13 |  |  | 169 |
-| 25×25 |  |  | 625 |
+| ---:   | ---:      |  ---:     | ---: |
+| 5×5    | 0.007560  | 0.001827  | 25 |
+| 13×13  | 0.038001  | 0.009960  | 169 |
+| 25×25  | 0.133232  | 0.038605  | 625 |
 
 측정 조건:
 
-- 반복 횟수: `[입력]`회
-- Python 버전: `[입력]`
-- 실행 환경: `[입력]`
+- 반복 횟수: `10000`회
+- Python 버전: `3.10.12`
+- 실행 환경: `Ubuntu 22.04`
+
+성능 비교:
+- 5x5: 1D가 2D보다 75.83% 빠름
+- 13x13: 1D가 2D보다 73.79% 빠름
+- 25x25: 1D가 2D보다 71.02% 빠름
+
 
 ### 10.4 시간 복잡도 분석
 
