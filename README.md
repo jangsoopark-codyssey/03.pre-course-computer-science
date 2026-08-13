@@ -61,11 +61,11 @@
 
 - `main.py`: 프로그램의 진입점으로 실행 인자와 데이터 파일 경로를 처리한다.
 - `application.py`: 사용자 입력 및 JSON 데이터 분석을 포함한 전체 프로그램의 실행 흐름을 관리한다.
-- `matrix.py`: 2차원 패턴과 필터를 표현하는 `Matrix` 자료구조를 정의한다.
-- `simulator.py`: 2D/1D MAC 연산과 epsilon 기반 점수 비교를 수행한다.
-- `benchmark.py`: MAC 연산을 반복 실행하여 평균 연산 시간을 측정한다.
-- `generator.py`: 임의 크기의 Cross 및 X 패턴을 생성한다.
-- `utils.py`: 사용자 입력, JSON 파일 로드, 라벨 정규화 등의 공통 기능을 제공한다.
+- `npu/matrix.py`: 2차원 패턴과 필터를 표현하는 `Matrix` 자료구조를 정의한다.
+- `npu/simulator.py`: 2D/1D MAC 연산과 epsilon 기반 점수 비교를 수행한다.
+- `npu/benchmark.py`: MAC 연산을 반복 실행하여 평균 연산 시간을 측정한다.
+- `npu/generator.py`: 임의 크기의 Cross 및 X 패턴을 생성한다.
+- `common/utils.py`: 사용자 입력, JSON 파일 로드, 라벨 정규화 등의 공통 기능을 제공한다.
 
 ## 3. 개발 환경
 
@@ -80,7 +80,14 @@
 
 ## 4. 실행 방법
 
-프로젝트의 `src/main.py`를 실행한다.
+프로젝트의 `scripts` 디렉토리로 이동 후 `run.sh`를 실행한다.
+```bash
+cd scripts
+
+./run.sh
+```
+
+또는 프로젝트의 `src/main.py`를 실행한다.
 
 ```bash
 python src/main.py
@@ -159,6 +166,16 @@ JSON 데이터에서 사용되는 라벨과 프로그램 내부에서 사용하�
 0.9000000000000000
 0.8999999999999999
 ```
+
+<details>
+
+<summary> Example: Round-Off Error </summary>
+
+![표현 오차](assets/figure/10.round-off-error.png)
+
+</details>
+
+
 
 이를 단순한 대소 비교로 처리하면 매우 작은 부동소수점 오차가 최종 판정에 영향을 줄 수 있다.  
 따라서 두 점수의 차이가 설정한 허용오차 `epsilon`보다 작은 경우 동점으로 판단한다.
